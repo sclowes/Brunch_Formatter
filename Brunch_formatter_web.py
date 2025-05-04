@@ -124,7 +124,8 @@ def generate_outputs(upload):
     df.columns = [col.strip() for col in df.columns]
 
     df["TABLE"] = df["Area"].apply(extract_table_numbers)
-    df["Cleaned Deposits"] = df[df.columns[-1]].apply(extract_deposit)
+    prepayment_col = next((col for col in df.columns if "pre" in col.lower() and "pay" in col.lower()), df.columns[-1])
+    df["Cleaned Deposits"] = df[prepayment_col].apply(extract_deposit)
 
     formatted = pd.DataFrame()
     formatted["NAME"] = df[df.columns[0]]
