@@ -145,7 +145,7 @@ def generate_outputs(upload):
     "Customer preorder notes", 
     "Customer requests", 
     "Dietary requirements", 
-    "Booking Notes"
+    "Run sheet notes"
     ]
     df["RUN SHEET NOTES:"] = df[note_cols].apply(
         lambda row: "\n".join(
