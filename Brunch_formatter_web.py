@@ -123,11 +123,45 @@ def generate_outputs(upload):
     formatted["LAST ORDERS:"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").apply(
         lambda t: (t + timedelta(minutes=75)).strftime("%H:%M") if pd.notnull(t) else ""
     )
-    formatted["TIME TABLE IS NEEDED BACK:"] = ""
     formatted["RUN SHEET NOTES:"] = df.get("Run Sheet Notes", "")
+    formatted["TIME TABLE IS NEEDED BACK:"] = ""
     formatted["FLIP TIME"] = ""
     formatted["CLEAR ORDER"] = ""
     formatted["FREE SHOTS?"] = ""
+
+    formatted["START"] = pd.to_datetime(formatted["TIME"], format="%H:%M", errors="coerce")
+    formatted["END"] = formatted["START"] + timedelta(minutes=90)
+
+    time_back_list = []
+    flip_time_list = []
+
+    for idx, row in formatted.iterrows():
+        table = row["TABLE"]
+        end_time = row["END"]
+        others = formatted[(formatted["TABLE"] == table) & (formatted.index != idx)]
+        future = others[others["START"] > row["START"]]
+
+        if not future.empty:
+            next_start = future["START"].min()
+            gap = (next_start - end_time).total_seconds() / 60
+            if gap <= 15:
+                needed_back = end_time
+            elif gap <= 30:
+                needed_back = end_time + timedelta(minutes=10)
+            else:
+                needed_back = next_start - timedelta(minutes=30)
+            flip = (next_start - needed_back).total_seconds() / 60
+            flip_time_str = f"{int(flip)} mins"
+        else:
+            needed_back = end_time
+            flip_time_str = ""
+
+        time_back_list.append(needed_back.strftime("%H:%M") if pd.notnull(needed_back) else "")
+        flip_time_list.append(flip_time_str)
+
+    formatted["TIME TABLE IS NEEDED BACK:"] = time_back_list
+    formatted["FLIP TIME"] = flip_time_list
+    formatted.drop(columns=["START", "END"], inplace=True)
 
     excel_bytes = create_excel(formatted)
 
