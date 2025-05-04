@@ -218,6 +218,13 @@ def generate_outputs(upload):
 if generate_button and uploaded_file:
     with st.spinner("Generating files..."):
         excel_file, pdf_file = generate_outputs(uploaded_file)
+        st.session_state["excel_file"] = excel_file
+        st.session_state["pdf_file"] = pdf_file
+    st.success("✅ Files ready!")
+
+if "excel_file" in st.session_state and "pdf_file" in st.session_state:
+    st.download_button("📥 Download Excel", data=st.session_state["excel_file"], file_name="brunch_sheet.xlsx")
+    st.download_button("📥 Download PDF", data=st.session_state["pdf_file"], file_name="reservation_cards.pdf")
 
     st.success("✅ Files ready!")
     st.download_button("📥 Download Excel", data=excel_file, file_name="brunch_sheet.xlsx")
