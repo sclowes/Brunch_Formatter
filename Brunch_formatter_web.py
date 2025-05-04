@@ -66,7 +66,7 @@ def create_excel(df):
         "LAST ORDERS:": 10,
         "FREE SHOTS?": 6,
         "TIME TABLE IS NEEDED BACK:": 15,
-        "FLIP TIME": 6,
+        "FLIP TIME": 8,
     }
 
     for idx, col in enumerate(df.columns, 1):
