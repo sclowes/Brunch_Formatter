@@ -222,10 +222,18 @@ if generate_button and uploaded_file:
         st.session_state["pdf_file"] = pdf_file
     st.success("✅ Files ready!")
 
-if "excel_file" in st.session_state and "pdf_file" in st.session_state:
-    st.download_button("📥 Download Excel", data=st.session_state["excel_file"], file_name="brunch_sheet.xlsx")
-    st.download_button("📥 Download PDF", data=st.session_state["pdf_file"], file_name="reservation_cards.pdf")
+if "excel_file" in st.session_state:
+    st.download_button(
+        "📥 Download Excel", 
+        data=st.session_state["excel_file"], 
+        file_name="brunch_sheet.xlsx",
+        key="download_excel"
+    )
 
-    st.success("✅ Files ready!")
-    st.download_button("📥 Download Excel", data=excel_file, file_name="brunch_sheet.xlsx")
-    st.download_button("📥 Download PDF", data=pdf_file, file_name="reservation_cards.pdf")
+if "pdf_file" in st.session_state:
+    st.download_button(
+        "📥 Download PDF", 
+        data=st.session_state["pdf_file"], 
+        file_name="reservation_cards.pdf",
+        key="download_pdf"
+    )
