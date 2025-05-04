@@ -59,13 +59,14 @@ def create_excel(df):
                         pass
 
     col_widths = {
-        "GUESTS": 6,
-        "TIME": 6,
+        "GUESTS": 7,
+        "TIME": 7,
         "PRE-PAYMENT:": 10,
         "AMOUNT DUE:": 10,
         "LAST ORDERS:": 10,
         "FREE SHOTS?": 6,
         "TIME TABLE IS NEEDED BACK:": 15,
+        "FLIP TIME": 6,
     }
 
     for idx, col in enumerate(df.columns, 1):
