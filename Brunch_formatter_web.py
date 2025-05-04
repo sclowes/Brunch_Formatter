@@ -140,7 +140,8 @@ def generate_outputs(upload):
     formatted["LAST ORDERS:"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").apply(
         lambda t: (t + timedelta(minutes=75)).strftime("%H:%M") if pd.notnull(t) else ""
     )
-    df["RUN SHEET NOTES:"] = df[["Customer preorder notes", "Customer requests", "Dietary requirements"]].fillna("").agg("\n\n".join, axis=1)
+    
+    df["RUN SHEET NOTES:"] = df[["Customer preorder notes", "Customer requests", "Dietary requirements"]].apply(lambda row: "\n".join([str(val).strip() for val in row if pd.notna(val) and str(val).strip() != ""]), axis=1)
     formatted["RUN SHEET NOTES:"] = df["RUN SHEET NOTES:"]
     formatted["TIME TABLE IS NEEDED BACK:"] = ""
     formatted["FLIP TIME"] = ""
