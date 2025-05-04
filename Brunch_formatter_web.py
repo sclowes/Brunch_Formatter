@@ -39,15 +39,18 @@ def create_excel(df):
         left=Side(style="thin"), right=Side(style="thin"),
         top=Side(style="thin"), bottom=Side(style="thin")
     )
-    align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     red_font = Font(color="FF0000")
+    header_font = Font(bold=True)
 
     for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
         for c_idx, value in enumerate(row, 1):
             cell = ws.cell(row=r_idx, column=c_idx, value=value)
             cell.border = border
-            cell.alignment = align
-            if r_idx > 1 and df.columns[c_idx - 1] == "AMOUNT DUE:":
+            cell.alignment = center_align
+            if r_idx == 1:
+                cell.font = header_font
+            elif df.columns[c_idx - 1] == "AMOUNT DUE:":
                 if isinstance(value, str) and value.startswith("£"):
                     try:
                         if float(value[1:]) > 0:
@@ -66,17 +69,14 @@ def create_excel(df):
     }
 
     for idx, col in enumerate(df.columns, 1):
-        col_letter = ws.cell(row=1, column=idx).column_letter
+        letter = ws.cell(row=1, column=idx).column_letter
         width = col_widths.get(col.upper())
         if width:
-            ws.column_dimensions[col_letter].width = width
+            ws.column_dimensions[letter].width = width
         else:
-            ws.column_dimensions[col_letter].width = 20  # reasonable default
+            ws.column_dimensions[letter].width = 40 if col.upper() == "RUN SHEET NOTES:" else 20
 
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
+    return wb
 
 def create_front(name, time_range):
     buffer = BytesIO()
@@ -180,9 +180,13 @@ def generate_outputs(upload):
     order_map = {t: i + 1 for i, t in enumerate(sorted(flip_dt.dropna().unique()))}
     formatted["CLEAR ORDER"] = flip_dt.map(order_map).fillna("").astype(str)
 
-    formatted.drop(columns=["START", "END"], inplace=True)
+    formatted["SORT_TIME"] = pd.to_datetime(formatted["TIME"], format="%H:%M", errors="coerce")
+    formatted = formatted.sort_values(by="SORT_TIME").drop(columns=["START", "END", "SORT_TIME"])
 
-    excel_bytes = create_excel(formatted)
+    wb = create_excel(formatted)
+    excel_bytes = BytesIO()
+    wb.save(excel_bytes)
+    excel_bytes.seek(0)
 
     merger = PdfMerger()
     for _, row in formatted.iterrows():
