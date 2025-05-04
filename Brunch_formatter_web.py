@@ -55,9 +55,23 @@ def create_excel(df):
                     except:
                         pass
 
-    for col in ws.columns:
-        length = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(30, length + 2)
+    col_widths = {
+        "GUESTS": 6,
+        "TIME": 6,
+        "PRE-PAYMENT:": 10,
+        "AMOUNT DUE:": 10,
+        "LAST ORDERS:": 10,
+        "FREE SHOTS?": 6,
+        "TIME TABLE IS NEEDED BACK:": 15,
+    }
+
+    for idx, col in enumerate(df.columns, 1):
+        col_letter = ws.cell(row=1, column=idx).column_letter
+        width = col_widths.get(col.upper())
+        if width:
+            ws.column_dimensions[col_letter].width = width
+        else:
+            ws.column_dimensions[col_letter].width = 20  # reasonable default
 
     output = BytesIO()
     wb.save(output)
@@ -161,6 +175,11 @@ def generate_outputs(upload):
 
     formatted["TIME TABLE IS NEEDED BACK:"] = time_back_list
     formatted["FLIP TIME"] = flip_time_list
+
+    flip_dt = pd.to_datetime(formatted["TIME TABLE IS NEEDED BACK:"], format="%H:%M", errors="coerce")
+    order_map = {t: i + 1 for i, t in enumerate(sorted(flip_dt.dropna().unique()))}
+    formatted["CLEAR ORDER"] = flip_dt.map(order_map).fillna("").astype(str)
+
     formatted.drop(columns=["START", "END"], inplace=True)
 
     excel_bytes = create_excel(formatted)
