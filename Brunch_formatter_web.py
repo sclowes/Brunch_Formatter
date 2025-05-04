@@ -3,7 +3,7 @@ import pandas as pd
 import re
 from io import BytesIO
 from datetime import datetime, timedelta
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.styles import Border, Side, Alignment, Font
 from openpyxl.utils.dataframe import dataframe_to_rows
 from reportlab.pdfgen import canvas
@@ -12,7 +12,6 @@ from reportlab.lib.units import mm
 from PyPDF2 import PdfMerger, PdfReader
 
 st.set_page_config(page_title="Brunch Formatter", layout="centered")
-
 st.title("🥂 Brunch Formatter")
 
 uploaded_file = st.file_uploader("Upload booking CSV", type="csv")
@@ -21,14 +20,14 @@ generate_button = st.button("Generate Excel + PDF")
 
 def extract_table_numbers(area_value):
     if isinstance(area_value, str):
-        matches = re.findall(r"(?:Wilsons?|Wilson's)\\s*(\\d+[a-zA-Z]?)", area_value, re.IGNORECASE)
+        matches = re.findall(r"(?:Wilsons?|Wilson's)\s*(\d+[a-zA-Z]?)", area_value, re.IGNORECASE)
         cleaned = ["STAGE" if m == "3" else m for m in matches]
         return ", ".join(cleaned) if cleaned else "TBC"
     return "TBC"
 
 def extract_deposit(value):
     if isinstance(value, str):
-        match = re.search(r"£\\s?(\\d+(?:\\.\\d{1,2})?)", value)
+        match = re.search(r"£\s?(\d+(?:\.\d{1,2})?)", value)
         return float(match.group(1)) if match else 0.0
     return float(value) if isinstance(value, (int, float)) else 0.0
 
@@ -48,7 +47,7 @@ def create_excel(df):
             cell = ws.cell(row=r_idx, column=c_idx, value=value)
             cell.border = border
             cell.alignment = align
-            if r_idx > 1 and df.columns[c_idx-1] == "Amount Due:":
+            if r_idx > 1 and df.columns[c_idx - 1] == "AMOUNT DUE:":
                 if isinstance(value, str) and value.startswith("£"):
                     try:
                         if float(value[1:]) > 0:
@@ -117,21 +116,21 @@ def generate_outputs(upload):
     formatted["GUESTS"] = df["Guests"]
     formatted["TIME"] = df["Time"]
     formatted["TABLE"] = df["TABLE"]
-    formatted["Pre-payment:"] = df["Cleaned Deposits"].apply(lambda x: f"£{x:.2f}")
-    formatted["Amount Due:"] = (
+    formatted["PRE-PAYMENT:"] = df["Cleaned Deposits"].apply(lambda x: f"£{x:.2f}")
+    formatted["AMOUNT DUE:"] = (
         pd.to_numeric(df["Guests"], errors="coerce").fillna(0) * 39.5 - df["Cleaned Deposits"]
     ).apply(lambda x: "-" if x <= 0 else f"£{x:.2f}")
-    formatted["Last Orders:"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").apply(
+    formatted["LAST ORDERS:"] = pd.to_datetime(df["Time"], format="%H:%M", errors="coerce").apply(
         lambda t: (t + timedelta(minutes=75)).strftime("%H:%M") if pd.notnull(t) else ""
     )
-    formatted["Run Sheet Notes:"] = df.get("Run Sheet Notes", "")
-    formatted["Flip Time"] = ""
-    formatted["Clear Order"] = ""
+    formatted["TIME TABLE IS NEEDED BACK:"] = ""
+    formatted["RUN SHEET NOTES:"] = df.get("Run Sheet Notes", "")
+    formatted["FLIP TIME"] = ""
+    formatted["CLEAR ORDER"] = ""
     formatted["FREE SHOTS?"] = ""
 
     excel_bytes = create_excel(formatted)
 
-    # Create PDF
     merger = PdfMerger()
     for _, row in formatted.iterrows():
         name = str(row["NAME"]).strip()
@@ -158,12 +157,10 @@ def generate_outputs(upload):
 
     return excel_bytes, pdf_bytes
 
-# ----- Run when user clicks button -----
 if generate_button and uploaded_file:
     with st.spinner("Generating files..."):
         excel_file, pdf_file = generate_outputs(uploaded_file)
 
     st.success("✅ Files ready!")
-
     st.download_button("📥 Download Excel", data=excel_file, file_name="brunch_sheet.xlsx")
     st.download_button("📥 Download PDF", data=pdf_file, file_name="reservation_cards.pdf")
